@@ -4,9 +4,10 @@ import io
 import logging
 
 import pymongo
-from flask import Blueprint, flash, redirect, request, session, url_for
+from flask import Blueprint, flash, redirect, request, session, url_for, send_file, render_template
 from flask_login import current_user
 from markupsafe import Markup
+from bson import ObjectId
 
 from scout.constants import (
     CANCER_SPECIFIC_VARIANT_DISMISS_OPTIONS,
@@ -811,7 +812,7 @@ def all_variants(institute_id, case_name):
                 store,
                 institute_obj,
                 case_obj,
-                VARIANT_PAGE,
+
                 request.form.getlist("dismiss"),
                 request.form.getlist("dismiss_choices"),
             )
@@ -884,3 +885,4 @@ def all_variants(institute_id, case_name):
         total_variants=total_variants,
         **data,
     )
+

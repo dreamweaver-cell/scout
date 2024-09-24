@@ -18,8 +18,11 @@ lib64
 dist/
 
 # Environments
-
-venv/
+.envrc
+.python-version
+config.py
+loqusdb_default.yml
+venc/
 
 # Pycharm
 .idea/
@@ -79,6 +82,7 @@ pylintrc
 /local
 scripts/local
 *sqlite
+.gitignore
 
 #Docker
 volumes

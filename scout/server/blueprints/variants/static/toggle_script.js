@@ -36,25 +36,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-/*
-    const toggleButton = document.getElementById('toggleButton');
-    const checkboxes = document.querySelectorAll('#variantTableBody input[type="checkbox"]');
-
-    toggleButton.addEventListener('click', function() {
-        const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = !allChecked;
-        });
-
-        toggleButton.textContent = allChecked ? 'Check All' : 'Uncheck All';
-    });
-
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-            toggleButton.textContent = allChecked ? 'Uncheck All' : 'Check All';
-        });
-    });
-*/
-
