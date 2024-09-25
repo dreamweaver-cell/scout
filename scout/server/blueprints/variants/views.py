@@ -812,7 +812,6 @@ def all_variants(institute_id, case_name):
                 store,
                 institute_obj,
                 case_obj,
-
                 request.form.getlist("dismiss"),
                 request.form.getlist("dismiss_choices"),
             )
@@ -855,7 +854,10 @@ def all_variants(institute_id, case_name):
     genome_build = "38" if "38" in str(case_obj.get("genome_build", "37")) else "37"
 
     variants_query = store.variants(
-        case_obj["_id"], query=form.data, category=category, build=genome_build,
+        case_obj["_id"],
+        query=form.data,
+        category=category,
+        build=genome_build,
     )
 
     result_size = store.count_variants(
@@ -885,4 +887,3 @@ def all_variants(institute_id, case_name):
         total_variants=total_variants,
         **data,
     )
-
