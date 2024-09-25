@@ -4,10 +4,12 @@ import io
 import logging
 
 import pymongo
-from flask import Blueprint, flash, redirect, request, session, url_for, send_file, render_template
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user
 from markupsafe import Markup
-from bson import ObjectId
+import requests
+import pandas as pd
+from io import StringIO
 
 from scout.constants import (
     CANCER_SPECIFIC_VARIANT_DISMISS_OPTIONS,
@@ -20,6 +22,7 @@ from scout.constants import (
 )
 from scout.server.extensions import store
 from scout.server.utils import institute_and_case, templated
+
 from . import controllers
 from .forms import (
     CancerFiltersForm,
@@ -845,10 +848,6 @@ def all_variants(institute_id, case_name):
     # update status of case if visited for the first time
     controllers.activate_case(store, institute_obj, case_obj, current_user)
 
-    # upload gene panel if symbol file exists
-    if request.files:
-        file = request.files[form.symbol_file.name]
-
     controllers.update_form_hgnc_symbols(store, case_obj, form)
 
     genome_build = "38" if "38" in str(case_obj.get("genome_build", "37")) else "37"
@@ -864,9 +863,8 @@ def all_variants(institute_id, case_name):
         case_obj["_id"], form.data, None, category, build=genome_build
     )
 
-    total_variants = 0
     for cat in category["$in"]:
-        total_variants += variants_stats.get(variant_type, {}).get(cat, "NA")
+        total_variants = variants_stats.get(variant_type, {}).get(cat, "NA")
 
     data = controllers.variants(
         store,
@@ -887,3 +885,23 @@ def all_variants(institute_id, case_name):
         total_variants=total_variants,
         **data,
     )
+
+
+@variants_bp.route("/civic_variants", methods=["GET", "POST"])
+@templated("variants/civic-variants.html")
+def download_civic_data(url="https://civicdb.org/downloads/01-Oct-2024/01-Oct-2024-VariantSummaries.tsv"):
+    try:
+        response = requests.get(url)
+
+        response.raise_for_status()
+
+        data = pd.read_csv(StringIO(response.text), sep='\t')
+
+        variants = data.to_dict('records')
+
+        # return render_template('variants/civic-variants.html', variants=variants)
+        return variants
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while downloading the data: {e}")
+        return None

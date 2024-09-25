@@ -8,7 +8,6 @@
 {% block content %}
 
 
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -63,12 +62,11 @@
 </body>
 </html>
 
-<!---------------------->
 
 <p>&nbsp</p>
 <h1>All Variants for Case {{ case.display_name }}</h1>
 <form id="variantForm" method="POST"
-        action="{{ url_for('variants.all_variants', institute_id=institute_id, case_name=case.display_name) }}">
+        action="{{ url_for('variants.all_variants', institute_id=case.owner, case_name=case.display_name) }}">
 <table class="table table-bordered">
   <thead>
   <tr>
@@ -86,7 +84,9 @@
     <tr>
       <td><input type="checkbox" value="{{variant.display_name}}, {{variant.category}}" name="display_name"></td>
       <td>{{ variant.display_name }}</td>
-      <td>{{ variant.category }}</td>
+      <td>{{ variant.end }}</td>
+      <td>{{ variant.length }}</td>
+      <td>{{ variant.sub_category }}</td>
       <td>{{ variant.rank_score }}</td>
       <td>{{ variant.variant_rank }}</td>
       <td>{{ variant.cadd_score }}</td>

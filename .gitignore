@@ -71,6 +71,9 @@ instance
 # Node.js
 node_modules/
 _book/
+eslint.config.mjs
+package-lock.json
+package.json
 
 # Textmate
 .tm_properties

@@ -12,6 +12,11 @@ and one admin user is added.
 
 import logging
 import pathlib
+import requests
+import pandas as pd
+from io import StringIO
+from datetime import datetime
+import calendar
 
 import click
 from flask.cli import current_app, with_appcontext
@@ -100,7 +105,8 @@ def abort_if_false(ctx, param, value):
     "--hpo-phenotype-annotation",
     type=click.Path(exists=True),
     help=(
-        "Path to file with map from HPO disease (OMIM and ORPHA) to phenotype term with annotation. This is the file  called phenotype.hpoa"
+        "Path to file with map from HPO disease (OMIM and ORPHA) to phenotype term with annotation.\
+              This is the file  called phenotype.hpoa"
     ),
 )
 @click.option(
@@ -118,6 +124,16 @@ def abort_if_false(ctx, param, value):
         "Path to file mapping ORPHA codes to genes. This is the file called "
         "orphadata_en_product6.xml"
     ),
+)
+@click.option(
+    "--civic-version",
+    default=None,
+    help="Version of the CIViC data to be loaded. Run '--civic-version MMM-YYYY',\
+          e.g. '--civic-version Jan-2024' to download the specific version of the CIViC data")
+@click.option(
+    "--add-civic-variants",
+    default=False,
+    help="Add CIViC variants to the database",
 )
 @with_appcontext
 @click.pass_context
@@ -142,6 +158,8 @@ def database(
     orpha_to_hpo,
     orpha_to_genes,
     files,
+    add_civic_variants,
+    civic_version,
 ):
     """Setup a scout database."""
 
@@ -209,6 +227,12 @@ def database(
             if path.stem == "orphadata_en_product6":
                 resource_files["orpha_to_genes_path"] = str(path.resolve())
 
+    if add_civic_variants:
+        LOG.info("Downloading CIViC data from CIViC website")
+        civic_variants = download_civic_data(civic_version)
+    else:
+        civic_variants = None
+
     setup_scout(
         adapter=adapter,
         institute_id=institute_name,
@@ -216,12 +240,23 @@ def database(
         user_mail=user_mail,
         api_key=api_key,
         resource_files=resource_files,
+        civic_variants=civic_variants,
     )
 
 
 @click.command("demo", short_help="Setup a scout demo instance")
+@click.option(
+    "--civic-version",
+    default=None,
+    help="Version of the CIViC data to be loaded. Run '--civic-version MMM-YYYY', e.g.\
+          '--civic-version Jan-2024' to download the specific version of the CIViC data")
+@click.option(
+    "--add-civic-variants",
+    default=False,
+    help="Add CIViC variants to the database"
+)
 @click.pass_context
-def demo(context):
+def demo(context, add_civic_variants, civic_version):
     """Setup a scout demo instance. This instance will be populated with a
     case, a gene panel and some variants.
     """
@@ -230,6 +265,12 @@ def demo(context):
     user_name = context.obj["user_name"]
     user_mail = context.obj["user_mail"]
 
+    if add_civic_variants:
+        LOG.info("Downloading CIViC data from CIViC website")
+        civic_variants = download_civic_data(civic_version)
+    else:
+        civic_variants = None
+
     adapter = context.obj["adapter"]
     setup_scout(
         adapter=adapter,
@@ -237,6 +278,7 @@ def demo(context):
         user_name=user_name,
         user_mail=user_mail,
         demo=True,
+        civic_variants=civic_variants,
     )
 
 
@@ -279,7 +321,6 @@ def setup(context, institute, user_mail, user_name):
     client = current_app.config["MONGO_CLIENT"]
 
     if context.invoked_subcommand == "demo":
-        # Modify the name of the database that will be created
         LOG.debug("Change database name to scout-demo")
         mongodb_name = "scout-demo"
 
@@ -300,3 +341,27 @@ def setup(context, institute, user_mail, user_name):
 
 setup.add_command(database)
 setup.add_command(demo)
+
+
+def download_civic_data(civic_version=None):
+    """Download CIViC data from CIViC website"""
+    if civic_version is None:
+        current_date = datetime.now()
+        month_abbr = calendar.month_abbr[current_date.month]
+        date = f"01-{month_abbr}-{current_date.year}"
+    else:
+        date = f"01-{civic_version}"
+
+    civic_url = f"https://civicdb.org/downloads/{date}/{date}-VariantSummaries.tsv"
+
+    try:
+        LOG.info(f"Downloading CIViC data from {civic_url}")
+        response = requests.get(civic_url)
+        response.raise_for_status()
+        civic_data = pd.read_csv(StringIO(response.text), sep='\t')
+        civic_variants = civic_data.to_dict('records')
+        LOG.info(f"Successfully downloaded {len(civic_data)} CIViC variants")
+        return civic_variants
+    except requests.exceptions.RequestException as e:
+        LOG.error(f"Failed to download CIViC data: {e}")
+        civic_data = None

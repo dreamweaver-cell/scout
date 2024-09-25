@@ -6479,10 +6479,10 @@ const treeContainer = document.getElementById('tree');
       createTree(data, treeContainer);    
 
 // Add click event listener for toggling
-treeContainer.addEventListener('click', function(event) {
-  if (event.target.tagName.toLowerCase() === 'span' && event.target.classList.contains('toggle')) {
-      event.target.classList.toggle('toggle-down');
-      event.target.parentElement.querySelector('.nested').classList.toggle('active');
+treeContainer.addEventListener('click', function(e) {
+  if (e.target.tagName.toLowerCase() === 'span' && e.target.classList.contains('toggle')) {
+      e.target.classList.toggle('toggle-down');
+      e.target.parentElement.querySelector('.nested').classList.toggle('active');
   }
 });
 

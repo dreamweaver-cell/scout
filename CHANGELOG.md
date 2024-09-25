@@ -4,7 +4,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 About changelog [here](https://keepachangelog.com/en/1.0.0/)
 
-## [unreleased]
+## [4.89.2]
+## Fixed
+- If OMIM gene panel gene symbols are not mapping to hgnc_id, allow fallback use of a unique gene alias
+
+## [4.89.1]
+### Fixed
+- General case report crash when encountering STR variants without `source` tags
+- Coloring and SV inheritance patterns on general case report
+
+## [4.89]
 ### Added
 - Button on SMN CN page to search variants within SMN1 and SMN2 genes
 - Options for selectively updating OMICS variants (fraser, outrider) on a case
@@ -12,7 +21,12 @@ About changelog [here](https://keepachangelog.com/en/1.0.0/)
 - `Mean MT coverage`, `Mean chrom 14 coverage` and `Estimated mtDNA copy number` on MT coverage file from chanjo2 if available
 - In ClinVar multistep form, preselect ACMG criteria according to the variant's ACMG classification, if available
 - Subject id search from caseS page (supporting multiple sample types e.g.) - adding indexes to speed up caseS queries
+<<<<<<< HEAD
 - Advanced cases search to narrow down results using more than one search parameter
+- Coverage report available for any case with samples containing d4 files, even if case has no associated gene panels
+- RNA delivery reports
+=======
+>>>>>>> c73ea6bd4 (Subject id search (#4881))
 ### Changed
 - Documentation for OMICS variants and updating a case
 - Include both creation and deletion dates in gene panels pages

@@ -9,7 +9,7 @@ it is a communicator for quering and updating the mongodatabase.
 
 This is best practice:
 
- uri = "mongodb://%s:%s@%s" % (
+uri = "mongodb://%s:%s@%s" % (
         quote_plus(user), quote_plus(password), host)
     client = MongoClient(uri)
 
@@ -34,6 +34,7 @@ from flask import current_app
 from .acmg import ACMGHandler
 from .case import CaseHandler
 from .case_group import CaseGroupHandler
+from .civic import CivicHandler
 from .clinvar import ClinVarHandler
 from .cytoband import CytobandHandler
 from .disease_terms import DiagnosisHandler
@@ -61,6 +62,7 @@ class MongoAdapter(
     ACMGHandler,
     CaseGroupHandler,
     CaseHandler,
+    CivicHandler,
     ClinVarHandler,
     CytobandHandler,
     DiagnosisHandler,
@@ -99,6 +101,7 @@ class MongoAdapter(
         self.acmg_collection = database.acmg
         self.case_collection = database.case
         self.case_group_collection = database.case_group
+        self.civic_collection = database.civic
         self.clinvar_collection = database.clinvar
         self.clinvar_submission_collection = database.clinvar_submission
         self.cytoband_collection = database.cytoband
@@ -124,7 +127,8 @@ class MongoAdapter(
         Returns:
             list_collection_names(list(str))
         """
-        return self.db.list_collection_names()
+        collections = self.db.list_collection_names()
+        return collections
 
     def collection_stats(self, coll_name: str) -> dict:
         """Returns stats from a single collection
