@@ -4,12 +4,13 @@ import io
 import logging
 
 import pymongo
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, request, session, url_for
 from flask_login import current_user
 from markupsafe import Markup
 import requests
 import pandas as pd
 from io import StringIO
+from typing import List, Dict, Any
 
 from scout.constants import (
     CANCER_SPECIFIC_VARIANT_DISMISS_OPTIONS,
@@ -866,6 +867,47 @@ def all_variants(institute_id, case_name):
     for cat in category["$in"]:
         total_variants = variants_stats.get(variant_type, {}).get(cat, "NA")
 
+    """Get CIViC data"""
+
+    # Get query parameters
+    query = request.args.get("query", "")
+    gene = request.args.get("gene", "")
+    variant = request.args.get("variant")
+    variant_aliases = request.args.get("variant_aliases", "")
+    variant_type = request.args.get("variant_type", "")
+    page = int(request.args.get("page", 1))
+    per_page = 5
+
+    # Build the MongoDB query
+    mongo_query: Dict[str, Any] = {}
+    if query:
+        mongo_query["$or"] = [
+            {"gene": {"$regex": query, "$options": "i"}},
+            {"variant": {"$regex": query, "$options": "i"}},
+            {"variant_groups": {"$regex": query, "$options": "i"}},
+            {"hgvs_descriptions": {"$elemMatch": {"$regex": query, "$options": "i"}}},
+        ]
+    if gene:
+        mongo_query["gene"] = gene
+    if variant:
+        mongo_query["variant"] = variant
+    if variant_aliases:
+        mongo_query["variant_aliases"] = variant_aliases
+    if variant_type:
+        mongo_query["variant_types"] = variant_type
+
+    skip = (page - 1) * per_page
+    variants = list(store.civic_collection.find(mongo_query).skip(skip).limit(per_page))
+    tot_civic_variants = store.civic_collection.count_documents(mongo_query)
+    variants_list: List[Dict[str, Any]] = list(variants)
+    more_variants = True if total_variants > (skip + per_page) else False
+
+    # Get unique variants and variant types for filtering
+    all_genes = store.civic_collection.distinct("gene")
+    all_variants = store.civic_collection.distinct("variant")
+    all_variant_aliases = store.civic_collection.distinct("variant_aliases")
+    all_variant_types = store.civic_collection.distinct("variant_types")
+
     data = controllers.variants(
         store,
         institute_obj,
@@ -876,6 +918,23 @@ def all_variants(institute_id, case_name):
         query_form=form.data,
     )
 
+    civic_data = {
+        "civic_variants": variants_list,
+        "tot_civic_variants": tot_civic_variants,
+        # "more_variants": more_variants,
+        # "page": page,
+        # "per_page": per_page,
+        "query": query,
+        "gene": gene,
+        "all_genes": all_genes,
+        "variant": variant,
+        "variant_aliases": variant_aliases,
+        "variant_type": variant_type,
+        "all_variants": all_variants,
+        "all_variant_aliases": all_variant_aliases,
+        "all_variant_types": all_variant_types,
+    }
+
     return dict(
         case=case_obj,
         form=form,
@@ -884,6 +943,7 @@ def all_variants(institute_id, case_name):
         result_size=result_size,
         total_variants=total_variants,
         **data,
+        **civic_data,
     )
 
 
